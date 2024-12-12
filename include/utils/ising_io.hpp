@@ -9,9 +9,9 @@
 #include "models/ising_model.hpp"
 struct ISINGIO
 {    
-    void serialize_ising_model_to_file(std::shared_ptr<IsingModel> ising_model, const std::string& model_filepath);
+    static void serialize_ising_model_to_file(std::shared_ptr<IsingModel> ising_model, const std::string& model_filepath);
 
-    std::shared_ptr<IsingModel> load_ising_model_from_file(const std::string& model_filepath);
+    static std::shared_ptr<IsingModel> load_ising_model_from_file(const std::string& model_filepath);
     static std::vector<int> read_spin_configurations(const std::string& file_path);
 };
 

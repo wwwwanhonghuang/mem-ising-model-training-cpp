@@ -34,6 +34,7 @@ struct IsingMEMTrainer{
                     const std::vector<int>& observation_configurations,
                     double alpha, bool require_evaluation);
 
+    void prepare_training();
     void update_model_parameters();
 
     void update_model_partition_functions();

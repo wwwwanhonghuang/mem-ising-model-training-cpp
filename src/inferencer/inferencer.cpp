@@ -51,3 +51,14 @@ double IsingInferencer::calculate_configuration_possibility(std::shared_ptr<Isin
     std::cout << "Model inference order should equal to 1 or 2." << std::endl;
     assert(false);
 }
+
+
+double IsingInferencer::get_Z(int order){
+    if (order != 1 && order != 2) {
+        std::cout << "Error: Order should equal to 1 or 2." << std::endl;
+        assert(false);
+    }
+    if(order == 1) return Z1;
+    if(order == 2) return Z2;
+    return -1;
+}

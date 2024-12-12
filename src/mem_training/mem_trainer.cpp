@@ -44,7 +44,7 @@ std::vector<double> calculate_model_proposed_essembly_average_si(const std::vect
         double possibility = ising_inferencer->calculate_configuration_possibility(ising_model, v);
 
         for(int i = 0; i < v.size(); i++){
-            essembly_average[i] += v[i] == 0 ? 0 : possibility;
+            essembly_average[i] += (v[i] == 0 ? 0 : possibility);
         }
     }
 
@@ -96,20 +96,23 @@ void IsingMEMTrainer::evaluation(){
         double p1 = ising_model_inferencer->calculate_configuration_possibility(ising_model, to_binary_representation(ising_model->n_sites, configuration), 1);
         S2 += -p2 * std::log(p2);
         S1 += -p1 * std::log(p1);
-        SN += observation_configuration_possibility_map.find(configuration) != observation_configuration_possibility_map.end() 
-            ? -observation_configuration_possibility_map[configuration] * std::log(observation_configuration_possibility_map[configuration]): 0;
+       
     }
-
+    for(auto& observation_possibility_record:observation_configuration_possibility_map){
+        double possibility = observation_possibility_record.second;
+        SN += -possibility * std::log(possibility);
+    }
     double r_s = (S1 - S2) / (S1 - SN);
     
     double D1 = 0.0;
     double D2 = 0.0;
     for(auto& configuration_record : observation_configuration_possibility_map){
-        D1 += configuration_record.second * 
-            std::log(configuration_record.second / 
+        double possibility = observation_possibility_record.second;
+        D1 += possibility * 
+            std::log(possibility / 
                 ising_model_inferencer->calculate_configuration_possibility(ising_model, to_binary_representation(ising_model->n_sites, configuration_record.first), 1));
-        D2 += configuration_record.second * 
-            std::log(configuration_record.second / 
+        D2 += possibility * 
+            std::log(possibility / 
                 ising_model_inferencer->calculate_configuration_possibility(ising_model, to_binary_representation(ising_model->n_sites, configuration_record.first), 2));
     }
 
@@ -119,22 +122,49 @@ void IsingMEMTrainer::evaluation(){
 };
 
 
+void print_si(const std::vector<double>& si){
+    for(int i = 0; i < si.size(); i++){
+        std::cout << si[i] << " ";
+    }
+    std::cout << std::endl;
+}
+
+void print_sisj(const std::vector<std::vector<double>>& sisj){
+    for(int i = 0; i < sisj.size(); i++){
+        const std::vector<double>& row = sisj[i];
+        for(int j = 0; j < row.size(); j++){
+            std::cout << sisj[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+}
 
 void IsingMEMTrainer::gradient_descending_step(){
-    
+    std::cout << "      - begin gradient_descending_step()" << std::endl;
+
+    std::cout << "        - calculate obs_essembly_avgerage_si" << std::endl;
     std::vector<double> obs_essembly_avgerage_si = 
         calculate_observation_essembly_average_si(observation_configurations, ising_model);
+    print_si(obs_essembly_avgerage_si);
 
+    std::cout << "        - calculate obs_essembly_avgerage_si_sj" << std::endl;
     std::vector<std::vector<double>> obs_essembly_avgerage_si_sj = 
         calculate_observation_essembly_average_si_sj(observation_configurations, ising_model);
+    print_sisj(obs_essembly_avgerage_si_sj);
 
+
+    std::cout << "        - calculate model_essembly_avgerage_si" << std::endl;
     std::vector<double> model_essembly_avgerage_si = 
         calculate_model_proposed_essembly_average_si(train_configurations, 
             ising_model, ising_model_inferencer);
+    print_si(model_essembly_avgerage_si);
 
+    std::cout << "        - calculate model_essembly_avgerage_si_sj" << std::endl;
     std::vector<std::vector<double>> model_essembly_avgerage_si_sj = 
         calculate_model_proposed_essembly_average_si_sj(train_configurations, 
             ising_model, ising_model_inferencer);
+    print_sisj(model_essembly_avgerage_si_sj);
 
 
     // calculate delta H, and update H
@@ -175,4 +205,12 @@ IsingMEMTrainer::IsingMEMTrainer(std::shared_ptr<IsingModel> ising_model,
     for(auto& configuration : observation_configuration_possibility_map){
         observation_configuration_possibility_map[configuration.first] /= observation_configurations.size();
     }
+}
+
+void IsingMEMTrainer::prepare_training(){
+    std::cout << "prepare trainning.." << std::endl;
+    std::cout << "  - prepare partition functions.." << std::endl;
+    ising_model_inferencer->update_partition_function(ising_model, train_configurations, require_evaluation);
+    std::cout << "  - partition functions Z1 = " << ising_model_inferencer->get_Z(1) << std::endl;
+    std::cout << "  - partition functions Z2 = " << ising_model_inferencer->get_Z(2) << std::endl;
 }

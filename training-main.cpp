@@ -15,6 +15,27 @@
 #include "utils/ising_io.hpp"
 
 
+std::vector<int> randomly_drop_observation_configurations(const std::vector<int>& observation_configurations, double drop_probability) {
+    std::vector<int> modified_configurations = observation_configurations;
+    
+    // Random engine and distribution
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(0.0, 1.0);  // Random values between 0 and 1
+
+    // Loop through the configurations and drop based on probability
+    auto it = modified_configurations.begin();
+    while (it != modified_configurations.end()) {
+        if (dis(gen) < drop_probability) {
+            // Drop this configuration by removing it from the vector
+            it = modified_configurations.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    return modified_configurations;
+}
 
 int main(){   
     // 1. Read configurations.
@@ -64,7 +85,7 @@ int main(){
     std::cout << " - Load observation samples from file " << spin_configuration_observation_data_file_path << std::endl;
 
     std::vector<int> observation_configurations = 
-        ISINGIO::read_spin_configurations(spin_configuration_observation_data_file_path);
+       randomly_drop_observation_configurations(ISINGIO::read_spin_configurations(spin_configuration_observation_data_file_path), 0.9);
     std::cout << " - Read spin configurations finished. configuration count = " << observation_configurations.size() << std::endl;    
     
     // 5. Training Loop
@@ -73,6 +94,9 @@ int main(){
 
     std::cout << "Enter training loop..." << std::endl;
 
+    random_initialize_ising_model(ising_model, 0.0, 0.1, 0.0, 0.1);
+
+    ising_model_mem_trainer->prepare_training();
     for(int iteration_id = 0; iteration_id < iterations; iteration_id++){
         std::cout << "Iteration " << iteration_id + 1  << "/" << iterations << ":" << std::endl;
         std::cout << "  - " << "Calculate gradients..." << std::endl;
@@ -88,6 +112,13 @@ int main(){
             ising_model_mem_trainer->evaluation();
         }
         std::cout << std::endl;
+
+
+        // Save the model
+        ISINGIO::serialize_ising_model_to_file(ising_model, 
+            std::string("data/model_iter") + 
+            std::to_string(iteration_id + 1) + 
+            std::string(".ising"));
         
     }
     return 0;

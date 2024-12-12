@@ -14,9 +14,6 @@ public:
     // Constructor
     IsingModel(int n_sites, double temperature);
 
-    // Method to initialize J and H with random values
-    void random_initialize(double j_min = -1.0, double j_max = 1.0, double h_min = -1.0, double h_max = 1.0);
-
 };
 
 #endif  // ISING_MODEL_HPP
