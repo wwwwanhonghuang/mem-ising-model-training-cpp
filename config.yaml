@@ -1,9 +1,12 @@
 configuration_generator:
   n: 10
-  output_file: "configuration_n31.bin"
+  output_file: "data/configuration_n31.bin"
 
 mem-trainer:
   n: 10
-  ising_training_configurations: "configuration_n31.bin"
-  iterations: 10
+  ising_training_samples_spin_configurations: "data/configuration_n31.bin"
+  ising_observation_spin_configurations: "data/configuration_obs_n31.bin"
+  iterations: 1
   evaluation: true
+  training:
+    alpha: 0.7

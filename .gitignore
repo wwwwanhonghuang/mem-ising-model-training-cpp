@@ -1,2 +1,6 @@
 .vscode
 *.bin
+bin
+*.cmake
+CMakeCache.txt
+CMakeFiles
