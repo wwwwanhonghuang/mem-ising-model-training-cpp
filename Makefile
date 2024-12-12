@@ -1,0 +1,19 @@
+CXX := clang++
+TARGET_CONFIGURATION_GENERATOR := configuration_generator
+SRC_TARGET_CONFIGURATION_GENERATOR := configuration_generator.cpp
+LDFLAGS := -lyaml-cpp
+
+TARGET_MEM_ISING_MAIN := mem_ising_training_main
+SRC_TARGET_MEM_ISING_MAIN := training-main.cpp
+LDFLAGS := -lyaml-cpp
+
+$(TARGET_CONFIGURATION_GENERATOR): $(SRC_TARGET_CONFIGURATION_GENERATOR)
+	$(CXX) -o $(TARGET_CONFIGURATION_GENERATOR) $(SRC_TARGET_CONFIGURATION_GENERATOR) $(LDFLAGS)
+
+
+$(TARGET_MEM_ISING_MAIN): $(SRC_TARGET_MEM_ISING_MAIN)
+	$(CXX) -o $(TARGET_MEM_ISING_MAIN) $(SRC_TARGET_MEM_ISING_MAIN) $(LDFLAGS)
+
+clean:
+	rm mem_ising_training_main
+	rm configuration_generator

@@ -1,0 +1,9 @@
+configuration_generator:
+  n: 10
+  output_file: "configuration_n31.bin"
+
+mem-trainer:
+  n: 10
+  ising_training_configurations: "configuration_n31.bin"
+  iterations: 10
+  evaluation: true
