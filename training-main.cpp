@@ -6,6 +6,9 @@
 #include <memory>
 #include <random>
 #include <cassert>
+#include <chrono>
+#include <iomanip>
+
 #include "macros.def"
 #include "models/ising_model.hpp"
 
@@ -14,7 +17,22 @@
 #include "mem_training/mem_trainer.hpp"
 #include "utils/ising_io.hpp"
 
-
+std::string current_time() {
+    // Get the current time from the system clock
+    auto now = std::chrono::system_clock::now();
+    
+    // Convert the current time to a time_t object
+    std::time_t now_time_t = std::chrono::system_clock::to_time_t(now);
+    
+    // Convert to a tm struct for formatting
+    std::tm now_tm = *std::localtime(&now_time_t);
+    
+    // Format the time into a string
+    std::ostringstream oss;
+    oss << std::put_time(&now_tm, "%Y-%m-%d %H:%M:%S");
+    
+    return oss.str();
+}
 std::vector<int> randomly_drop_observation_configurations(const std::vector<int>& observation_configurations, double drop_probability) {
     std::vector<int> modified_configurations = observation_configurations;
     
@@ -74,47 +92,50 @@ int main(){
     std::shared_ptr<IsingInferencer> ising_model_inferencer = std::make_shared<IsingInferencer>();
     
     // 3. Read ising spin configuration data for training. 
-    std::cout << " - Load samples for training from file " << spin_configuration_training_data_file_path << std::endl;
+    std::cout << " - Load samples for training from file " << spin_configuration_training_data_file_path << "[" << current_time() << "]" << std::endl;
 
     std::vector<int> training_configurations = 
         ISINGIO::read_spin_configurations(spin_configuration_training_data_file_path);
 
-    std::cout << " - Loaded samples for training from file  configuration count = " << training_configurations.size() << std::endl;
+    std::cout << " - Loaded samples for training from file  configuration count = " 
+        << training_configurations.size() << "[" << current_time() << "]" << std::endl;
     
     // 4. Read observation_configurations
-    std::cout << " - Load observation samples from file " << spin_configuration_observation_data_file_path << std::endl;
+    std::cout << " - Load observation samples from file " << 
+        spin_configuration_observation_data_file_path << "[" << current_time() << "]" << std::endl;
 
     std::vector<int> observation_configurations = 
        ISINGIO::read_spin_configurations(spin_configuration_observation_data_file_path);
-    std::cout << " - Read spin configurations finished. configuration count = " << observation_configurations.size() << std::endl;    
+    std::cout << " - Read spin configurations finished. configuration count = " << observation_configurations.size()
+     << "[" << current_time() << "]" << std::endl;    
  
     // 5. Training Loop
     std::shared_ptr<IsingMEMTrainer> ising_model_mem_trainer = 
         std::make_shared<IsingMEMTrainer>(ising_model, ising_model_inferencer, training_configurations, observation_configurations, alpha, require_evaluation);
 
-    std::cout << "Enter training loop..." << std::endl;
+    std::cout << "Enter training loop..." << "[" << current_time() << "]"  << std::endl;
 
     random_initialize_ising_model(ising_model, 0.0, 0.1, 0.0, 0.1);
-    std::cout << "Randomly intitialize ising model finished." << std::endl;
+    std::cout << "Randomly intitialize ising model finished." << "[" << current_time() << "]" << std::endl;
 
     ising_model_mem_trainer->prepare_training();
     for(int iteration_id = 0; iteration_id < iterations; iteration_id++){
-        std::cout << "Iteration " << iteration_id + 1  << "/" << iterations << ":" << std::endl;
-        std::cout << "  - " << "Calculate gradients..." << std::endl;
+        std::cout << "Iteration " << iteration_id + 1  << "/" << iterations << "[" << current_time() << "]" << ":" << std::endl;
+        std::cout << "  - " << "Calculate gradients..." << "[" << current_time() << "]" << std::endl;
         ising_model_mem_trainer->gradient_descending_step();
-        std::cout << "  - " << "Update model parameters..." << std::endl;
+        std::cout << "  - " << "Update model parameters..." << "[" << current_time() << "]" << std::endl;
         ising_model_mem_trainer->update_model_parameters();
-        std::cout << "  - " << "Update model partition functions..." << std::endl;
+        std::cout << "  - " << "Update model partition functions..." << "[" << current_time() << "]" << std::endl;
         ising_model_mem_trainer->update_model_partition_functions();
 
         //　Evaluation
         double reliability = INFINITY;
         if(require_evaluation){
-            std::cout << "  - " << "Evaluate reliability..." << std::endl;
+            std::cout << "  - " << "Evaluate reliability..." << "[" << current_time() << "]" << std::endl;
             reliability = ising_model_mem_trainer->evaluation();
         }
         std::cout << std::endl;
-        
+
         // Save the model
         ISINGIO::serialize_ising_model_to_file(ising_model, 
             std::string("data/model_iter") + 
