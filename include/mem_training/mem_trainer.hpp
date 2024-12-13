@@ -26,6 +26,7 @@ struct IsingMEMTrainer{
     const std::vector<int>& observation_configurations;
     double alpha;
     std::unordered_map<int, double> observation_configuration_possibility_map;
+    int n_configurations;
     
     public:
     IsingMEMTrainer(std::shared_ptr<IsingModel> ising_model, 
@@ -39,7 +40,7 @@ struct IsingMEMTrainer{
 
     void update_model_partition_functions();
 
-    void evaluation();
+    double evaluation();
 
     void gradient_descending_step();
 };

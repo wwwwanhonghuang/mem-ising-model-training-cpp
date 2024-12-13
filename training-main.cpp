@@ -85,9 +85,9 @@ int main(){
     std::cout << " - Load observation samples from file " << spin_configuration_observation_data_file_path << std::endl;
 
     std::vector<int> observation_configurations = 
-       randomly_drop_observation_configurations(ISINGIO::read_spin_configurations(spin_configuration_observation_data_file_path), 0.9);
+       ISINGIO::read_spin_configurations(spin_configuration_observation_data_file_path);
     std::cout << " - Read spin configurations finished. configuration count = " << observation_configurations.size() << std::endl;    
-    
+ 
     // 5. Training Loop
     std::shared_ptr<IsingMEMTrainer> ising_model_mem_trainer = 
         std::make_shared<IsingMEMTrainer>(ising_model, ising_model_inferencer, training_configurations, observation_configurations, alpha, require_evaluation);
@@ -107,9 +107,10 @@ int main(){
         ising_model_mem_trainer->update_model_partition_functions();
 
         //　Evaluation
+        double reliability = INFINITY;
         if(require_evaluation){
             std::cout << "  - " << "Evaluate reliability..." << std::endl;
-            ising_model_mem_trainer->evaluation();
+            reliability = ising_model_mem_trainer->evaluation();
         }
         std::cout << std::endl;
 
@@ -118,6 +119,8 @@ int main(){
         ISINGIO::serialize_ising_model_to_file(ising_model, 
             std::string("data/model_iter") + 
             std::to_string(iteration_id + 1) + 
+            std::string("_") + 
+            std::to_string(reliability) +
             std::string(".ising"));
         
     }
