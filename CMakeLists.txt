@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(IsingModelTraining LANGUAGES CXX)
 
+
 # Set the C++ compiler
 set(CMAKE_CXX_COMPILER clang++)
 
@@ -16,8 +17,10 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 file(GLOB SOURCES "src/*.cpp")
 file(GLOB_RECURSE ADDITIONAL_SOURCES "src/**/*.cpp")
 
+
 # Combine them together
 list(APPEND SOURCES ${ADDITIONAL_SOURCES})
+
 
 # Include directories if needed
 include_directories(${CMAKE_SOURCE_DIR}/include)
@@ -31,7 +34,13 @@ target_link_libraries(configuration_generator ${LINK_LIBS})
 
 # Target: mem_ising_training_main
 add_executable(mem_ising_training_main ${SOURCES} training-main.cpp)
-target_link_libraries(mem_ising_training_main ${LINK_LIBS})
+target_link_libraries(mem_ising_training_main PRIVATE ${LINK_LIBS})
+
+find_package(OpenMP REQUIRED)
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(mem_ising_training_main PRIVATE OpenMP::OpenMP_CXX)
+endif()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
 # Custom clean command
 add_custom_target(clean-all

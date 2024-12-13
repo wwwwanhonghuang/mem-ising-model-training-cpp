@@ -1,7 +1,7 @@
 #include "mem_training/mem_trainer.hpp"
 #include "utils/ising_model_utils.hpp"
 #include <cmath>
-
+#include <omp.h>
 
 std::vector<double> calculate_observation_essembly_average_si(const std::vector<int>& observation_configurations, 
         std::shared_ptr<IsingModel> ising_model){
@@ -40,35 +40,87 @@ std::vector<std::vector<double>> calculate_observation_essembly_average_si_sj(co
 };
 
 std::vector<double> calculate_model_proposed_essembly_average_si(const std::vector<int>& configurations, std::shared_ptr<IsingModel> ising_model, std::shared_ptr<IsingInferencer> ising_inferencer){
-    std::vector<double> essembly_average(ising_model->n_sites, 0);
-    for(int configuration : configurations){
-        std::vector<char> v = to_binary_representation(ising_model->n_sites, configuration);
-        double possibility = ising_inferencer->calculate_configuration_possibility(ising_model, v);
+    int n_sites = ising_model->n_sites;
+    std::vector<double> essembly_average(n_sites, 0.0);
 
-        for(int i = 0; i < v.size(); i++){
-            essembly_average[i] += (v[i] == 0 ? 0 : possibility);
+    // Number of configurations
+    int num_configs = configurations.size();
+
+    // Use OpenMP to parallelize the loop
+    #pragma omp parallel
+    {
+        // Each thread gets a private copy for accumulation
+        std::vector<double> local_essembly_average(n_sites, 0.0);
+
+        #pragma omp for
+        for (int idx = 0; idx < num_configs; idx++) {
+            int configuration = configurations[idx];
+            std::vector<char> v = to_binary_representation(n_sites, configuration);
+            double possibility = ising_inferencer->calculate_configuration_possibility(ising_model, v);
+
+            for (int i = 0; i < n_sites; i++) {
+                if (v[i] != 0) {
+                    local_essembly_average[i] += possibility;
+                }
+            }
+        }
+
+        // Safely accumulate the local results into the global vector
+        #pragma omp critical
+        {
+            for (int i = 0; i < n_sites; i++) {
+                essembly_average[i] += local_essembly_average[i];
+            }
         }
     }
 
-    for(int i = 0; i < ising_model->n_sites; i++){
-        essembly_average[i] /= configurations.size();
+    // Normalize the results
+    for (int i = 0; i < n_sites; i++) {
+        essembly_average[i] /= num_configs;
     }
+
     return essembly_average;
 };
 
 std::vector<std::vector<double>> calculate_model_proposed_essembly_average_si_sj(const std::vector<int>& configurations, std::shared_ptr<IsingModel> ising_model, std::shared_ptr<IsingInferencer> ising_inferencer){
-    std::vector<std::vector<double>> essembly_average(ising_model->n_sites, std::vector<double>(ising_model->n_sites, 0));
-    for(int configuration : configurations){
-        std::vector<char> v = to_binary_representation(ising_model->n_sites, configuration);
-        double possibility = ising_inferencer->calculate_configuration_possibility(ising_model, v);
-        for(int i = 0; i < ising_model->n_sites; i++){
-            for(int j = 0; j < ising_model->n_sites; j++){
-                if(v[i] == 1 && v[j] == 1) 
-                    essembly_average[i][j] += 1 * possibility;
+    int n_sites = ising_model->n_sites;
+    std::vector<std::vector<double>> essembly_average(n_sites, std::vector<double>(n_sites, 0.0));
+
+    // Number of configurations
+    int num_configs = configurations.size();
+
+    // Use OpenMP to parallelize the loop
+    #pragma omp parallel
+    {
+        // Each thread gets a private copy for accumulation
+        std::vector<std::vector<double>> local_essembly_average(n_sites, std::vector<double>(n_sites, 0.0));
+
+        #pragma omp for
+        for (int idx = 0; idx < num_configs; idx++) {
+            int configuration = configurations[idx];
+            std::vector<char> v = to_binary_representation(n_sites, configuration);
+            double possibility = ising_inferencer->calculate_configuration_possibility(ising_model, v);
+
+            for (int i = 0; i < n_sites; i++) {
+                for (int j = 0; j < n_sites; j++) {
+                    if (v[i] == 1 && v[j] == 1) {
+                        local_essembly_average[i][j] += possibility;
+                    }
+                }
+            }
+        }
+
+        // Safely accumulate the local results into the global matrix
+        #pragma omp critical
+        {
+            for (int i = 0; i < n_sites; i++) {
+                for (int j = 0; j < n_sites; j++) {
+                    essembly_average[i][j] += local_essembly_average[i][j];
+                }
             }
         }
     }
-    
+
     return essembly_average;
 };
 

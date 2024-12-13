@@ -95,6 +95,7 @@ int main(){
     std::cout << "Enter training loop..." << std::endl;
 
     random_initialize_ising_model(ising_model, 0.0, 0.1, 0.0, 0.1);
+    std::cout << "Randomly intitialize ising model finished." << std::endl;
 
     ising_model_mem_trainer->prepare_training();
     for(int iteration_id = 0; iteration_id < iterations; iteration_id++){
