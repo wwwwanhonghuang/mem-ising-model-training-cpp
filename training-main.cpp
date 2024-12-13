@@ -114,8 +114,7 @@ int main(){
             reliability = ising_model_mem_trainer->evaluation();
         }
         std::cout << std::endl;
-
-
+        
         // Save the model
         ISINGIO::serialize_ising_model_to_file(ising_model, 
             std::string("data/model_iter") + 

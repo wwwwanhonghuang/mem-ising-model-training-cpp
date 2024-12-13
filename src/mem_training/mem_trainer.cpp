@@ -146,10 +146,15 @@ inline double laplace_smoothing(double p, int n_configurations){
     const double e = 1e-39;
     return (p + e) / (e * n_configurations + 1);
 }
+
 double IsingMEMTrainer::evaluation(){
     double S1 = 0.0; // order-1 entropy
     double S2 = 0.0; // order-2 entropy
     double SN = 0.0; // empirical entropy
+    double D1 = 0.0;
+    double D2 = 0.0;
+
+    #pragma omp parallel for reduction(+:S1, S2, SN)
     for(int configuration : train_configurations){
         double p2 = 
             ising_model_inferencer->calculate_configuration_possibility(ising_model, to_binary_representation(ising_model->n_sites, configuration), 2);
@@ -170,8 +175,7 @@ double IsingMEMTrainer::evaluation(){
 
     double r_s = (S1 - S2) / (S1 - SN);
     
-    double D1 = 0.0;
-    double D2 = 0.0;
+    #pragma omp parallel for reduction(+:D1, D2)
     for(int configuration : train_configurations){
         double obs_possibility = 0.0;
         if(observation_configuration_possibility_map.find(configuration) != observation_configuration_possibility_map.end()){
