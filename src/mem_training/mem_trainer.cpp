@@ -1,5 +1,7 @@
 #include "mem_training/mem_trainer.hpp"
+#include "utils/ising_model_utils.hpp"
 #include <cmath>
+
 
 std::vector<double> calculate_observation_essembly_average_si(const std::vector<int>& observation_configurations, 
         std::shared_ptr<IsingModel> ising_model){
@@ -87,38 +89,57 @@ void IsingMEMTrainer::update_model_partition_functions(){
 };
 
 
-void IsingMEMTrainer::evaluation(){
+
+inline double laplace_smoothing(double p, int n_configurations){
+    const double e = 1e-39;
+    return (p + e) / (e * n_configurations + 1);
+}
+double IsingMEMTrainer::evaluation(){
     double S1 = 0.0; // order-1 entropy
     double S2 = 0.0; // order-2 entropy
     double SN = 0.0; // empirical entropy
     for(int configuration : train_configurations){
-        double p2 = ising_model_inferencer->calculate_configuration_possibility(ising_model, to_binary_representation(ising_model->n_sites, configuration), 2);
-        double p1 = ising_model_inferencer->calculate_configuration_possibility(ising_model, to_binary_representation(ising_model->n_sites, configuration), 1);
+        double p2 = 
+            ising_model_inferencer->calculate_configuration_possibility(ising_model, to_binary_representation(ising_model->n_sites, configuration), 2);
+        double p1 = 
+            ising_model_inferencer->calculate_configuration_possibility(ising_model, to_binary_representation(ising_model->n_sites, configuration), 1);
+        p2 = laplace_smoothing(p2, n_configurations);
+        p1 = laplace_smoothing(p1, n_configurations);
         S2 += -p2 * std::log(p2);
         S1 += -p1 * std::log(p1);
-       
+
+        double p_observation = 0.0;
+        if(observation_configuration_possibility_map.find(configuration) != observation_configuration_possibility_map.end()){
+            p_observation = observation_configuration_possibility_map[configuration];
+        }
+        p_observation = laplace_smoothing(p_observation, n_configurations);
+        SN += -p_observation * std::log(p_observation);
     }
-    for(auto& observation_possibility_record:observation_configuration_possibility_map){
-        double possibility = observation_possibility_record.second;
-        SN += -possibility * std::log(possibility);
-    }
+
     double r_s = (S1 - S2) / (S1 - SN);
     
     double D1 = 0.0;
     double D2 = 0.0;
-    for(auto& configuration_record : observation_configuration_possibility_map){
-        double possibility = observation_possibility_record.second;
-        D1 += possibility * 
-            std::log(possibility / 
-                ising_model_inferencer->calculate_configuration_possibility(ising_model, to_binary_representation(ising_model->n_sites, configuration_record.first), 1));
-        D2 += possibility * 
-            std::log(possibility / 
-                ising_model_inferencer->calculate_configuration_possibility(ising_model, to_binary_representation(ising_model->n_sites, configuration_record.first), 2));
+    for(int configuration : train_configurations){
+        double obs_possibility = 0.0;
+        if(observation_configuration_possibility_map.find(configuration) != observation_configuration_possibility_map.end()){
+            obs_possibility = observation_configuration_possibility_map[configuration];
+        }
+        obs_possibility = laplace_smoothing(obs_possibility, n_configurations);
+
+        double model_possibility_order_1 = ising_model_inferencer->calculate_configuration_possibility(ising_model, to_binary_representation(ising_model->n_sites, configuration), 1);
+        double model_possibility_order_2 = ising_model_inferencer->calculate_configuration_possibility(ising_model, to_binary_representation(ising_model->n_sites, configuration), 2);
+        model_possibility_order_1 = laplace_smoothing(model_possibility_order_1, n_configurations);
+        model_possibility_order_2 = laplace_smoothing(model_possibility_order_2, n_configurations);
+
+        D1 += obs_possibility * std::log(obs_possibility / model_possibility_order_1);
+        D2 += obs_possibility * std::log(obs_possibility / model_possibility_order_2);
     }
 
     double r_d = (D1 - D2) / D1;
     std::cout << "r_d = " << r_d << std::endl;
     std::cout << "Reliablity: r_s / r_d = " << r_s / r_d << std::endl;
+    return r_s / r_d;
 };
 
 
@@ -205,6 +226,7 @@ IsingMEMTrainer::IsingMEMTrainer(std::shared_ptr<IsingModel> ising_model,
     for(auto& configuration : observation_configuration_possibility_map){
         observation_configuration_possibility_map[configuration.first] /= observation_configurations.size();
     }
+    n_configurations = 1 << ising_model->n_sites;
 }
 
 void IsingMEMTrainer::prepare_training(){

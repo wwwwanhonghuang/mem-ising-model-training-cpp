@@ -33,3 +33,5 @@ void random_initialize_ising_model(std::shared_ptr<IsingModel> ising_model, doub
         ising_model->H[i] = h_dist(gen);
     }
 }
+
+
