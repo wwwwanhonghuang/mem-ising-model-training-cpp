@@ -9,23 +9,23 @@
 #include "inferencer/inferencer.hpp"
 
 
-std::vector<double> calculate_observation_essembly_average_si(const std::vector<int>& observation_configurations, std::shared_ptr<IsingModel> ising_model);
-std::vector<std::vector<double>> calculate_observation_essembly_average_si_sj(const std::vector<int>& observation_configurations, 
+std::vector<long double> calculate_observation_essembly_average_si(const std::vector<int>& observation_configurations, std::shared_ptr<IsingModel> ising_model);
+std::vector<std::vector<long double>> calculate_observation_essembly_average_si_sj(const std::vector<int>& observation_configurations, 
         std::shared_ptr<IsingModel> ising_model);
-std::vector<double> calculate_model_proposed_essembly_average_si(const std::vector<int>& configurations, std::shared_ptr<IsingModel> ising_model, std::shared_ptr<IsingInferencer> ising_inferencer);
-std::vector<std::vector<double>> calculate_model_proposed_essembly_average_si_sj(const std::vector<int>& configurations, std::shared_ptr<IsingModel> ising_model, std::shared_ptr<IsingInferencer> ising_inferencer);
+std::vector<long double> calculate_model_proposed_essembly_average_si(const std::vector<int>& configurations, std::shared_ptr<IsingModel> ising_model, std::shared_ptr<IsingInferencer> ising_inferencer);
+std::vector<std::vector<long double>> calculate_model_proposed_essembly_average_si_sj(const std::vector<int>& configurations, std::shared_ptr<IsingModel> ising_model, std::shared_ptr<IsingInferencer> ising_inferencer);
 
 struct IsingMEMTrainer{
     private:
     std::shared_ptr<IsingModel> ising_model;
     std::shared_ptr<IsingInferencer> ising_model_inferencer;
-    std::vector<double> buffer_beta_H;
-    std::vector<std::vector<double>> buffer_beta_J;
+    std::vector<long double> buffer_beta_H;
+    std::vector<std::vector<long double>> buffer_beta_J;
     bool require_evaluation;
     const std::vector<int>& train_configurations;
     const std::vector<int>& observation_configurations;
     double alpha;
-    std::unordered_map<int, double> observation_configuration_possibility_map;
+    std::unordered_map<int, long double> observation_configuration_possibility_map;
     int n_configurations;
     
     public:
@@ -40,7 +40,7 @@ struct IsingMEMTrainer{
 
     void update_model_partition_functions();
 
-    double evaluation();
+    long double evaluation();
 
     void gradient_descending_step();
 };

@@ -14,14 +14,14 @@ void ISINGIO::serialize_ising_model_to_file(std::shared_ptr<IsingModel> ising_mo
 
     // Save the interaction matrix J
     for (const auto& row : ising_model->J) {
-        for (double value : row) {
+        for (long double value : row) {
             out_file << value << " ";
         }
         out_file << "\n";
     }
 
     // Save the external field H
-    for (double h : ising_model->H) {
+    for (long double h : ising_model->H) {
         out_file << h << " ";
     }
     out_file << "\n";
@@ -44,8 +44,8 @@ std::shared_ptr<IsingModel> ISINGIO::load_ising_model_from_file(const std::strin
     in_file >> temperature;
 
     // Resize J and H based on the number of sites
-    std::vector<std::vector<double>> J(n_sites, std::vector<double>(n_sites, 0.0));
-    std::vector<double> H(n_sites, 0.0);
+    std::vector<std::vector<long double>> J(n_sites, std::vector<long double>(n_sites, 0.0));
+    std::vector<long double> H(n_sites, 0.0);
 
     // Load the interaction matrix J
     for (int i = 0; i < n_sites; ++i) {

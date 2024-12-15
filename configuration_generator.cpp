@@ -15,7 +15,7 @@ int main(){
     std::string output_file_path = config["configuration_generator"]["output_file"].as<std::string>();
     std::ofstream output_stream(output_file_path, std::ios::binary);
     if (!output_stream){
-        std::cerr << "Error: cannot read configuration item 'output_file'." << std::endl;
+        std::cerr << "Error: cannot create stream for output file " << output_file_path << std::endl;
         return -1;
     }
 

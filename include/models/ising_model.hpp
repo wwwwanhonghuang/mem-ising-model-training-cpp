@@ -6,8 +6,8 @@
 
 class IsingModel {
 public:
-    std::vector<std::vector<double>> J;
-    std::vector<double> H;
+    std::vector<std::vector<long double>> J;
+    std::vector<long double> H;
     int n_sites;
     double temperature;
 

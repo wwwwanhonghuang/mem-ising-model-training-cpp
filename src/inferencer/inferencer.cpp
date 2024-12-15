@@ -5,7 +5,9 @@
 #include <omp.h>
 
 #include "utils/ising_model_utils.hpp"
-void IsingInferencer::update_partition_function(std::shared_ptr<IsingModel> ising_model, std::vector<int> configurations, bool update_order_1_partition_function) {
+
+void IsingInferencer::update_partition_function(std::shared_ptr<IsingModel> ising_model, 
+                std::vector<int> configurations, bool update_order_1_partition_function) {
     Z2 = 0.0;
     Z1 = 0.0;
     #pragma omp parallel for reduction(+:Z2, Z1)
@@ -17,12 +19,10 @@ void IsingInferencer::update_partition_function(std::shared_ptr<IsingModel> isin
             Z1 += std::exp(-energy(ising_model, v, 1) / ising_model->temperature);
         }
     }
-
-    
 }
 
-double IsingInferencer::energy(std::shared_ptr<IsingModel> ising_model, const std::vector<char>& configuration, int order) {
-    double energy = 0.0;
+long double IsingInferencer::energy(std::shared_ptr<IsingModel> ising_model, const std::vector<char>& configuration, int order) {
+    long double energy = 0.0;
     
     if (order != 1 && order != 2) {
         std::cout << "Error: Order should equal to 1 or 2." << std::endl;
@@ -38,15 +38,15 @@ double IsingInferencer::energy(std::shared_ptr<IsingModel> ising_model, const st
             }
         }
     }
-
+    
     for (int i = 0; i < ising_model->n_sites; i++) {
-        energy += ising_model->H[i] * configuration[i];
+        energy += -ising_model->H[i] * configuration[i];
     }
 
     return energy;
 }
 
-double IsingInferencer::calculate_configuration_possibility(std::shared_ptr<IsingModel> ising_model, const std::vector<char>& configuration, int order) {
+long double IsingInferencer::calculate_configuration_possibility(std::shared_ptr<IsingModel> ising_model, const std::vector<char>& configuration, int order) {
     if (order == 2) {
         return std::exp(-energy(ising_model, configuration) / ising_model->temperature) / Z2;
     }
@@ -59,7 +59,7 @@ double IsingInferencer::calculate_configuration_possibility(std::shared_ptr<Isin
 }
 
 
-double IsingInferencer::get_Z(int order){
+long double IsingInferencer::get_Z(int order){
     if (order != 1 && order != 2) {
         std::cout << "Error: Order should equal to 1 or 2." << std::endl;
         assert(false);

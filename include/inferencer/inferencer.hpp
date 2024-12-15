@@ -10,12 +10,12 @@ class IsingInferencer {
 public:
     // Function prototypes
     void update_partition_function(std::shared_ptr<IsingModel> ising_model, std::vector<int> configurations, bool update_order_1_partition_function = false);
-    double energy(std::shared_ptr<IsingModel> ising_model, const std::vector<char>& configuration, int order = 2);
-    double calculate_configuration_possibility(std::shared_ptr<IsingModel> ising_model, const std::vector<char>& configuration, int order = 2);
-    double get_Z(int order);
+    long double energy(std::shared_ptr<IsingModel> ising_model, const std::vector<char>& configuration, int order = 2);
+    long double calculate_configuration_possibility(std::shared_ptr<IsingModel> ising_model, const std::vector<char>& configuration, int order = 2);
+    long double get_Z(int order);
 private:
-    double Z1 = 0.0;
-    double Z2 = 0.0;
+    long double Z1 = 0.0;
+    long double Z2 = 0.0;
 };
 
 #endif

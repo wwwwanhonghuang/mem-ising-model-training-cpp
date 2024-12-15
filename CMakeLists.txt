@@ -39,8 +39,9 @@ target_link_libraries(mem_ising_training_main PRIVATE ${LINK_LIBS})
 find_package(OpenMP REQUIRED)
 if(OpenMP_CXX_FOUND)
     target_link_libraries(mem_ising_training_main PRIVATE OpenMP::OpenMP_CXX)
+    target_compile_options(mem_ising_training_main PRIVATE ${OpenMP_CXX_FLAGS})
 endif()
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -latomic")
 
 # Custom clean command
 add_custom_target(clean-all

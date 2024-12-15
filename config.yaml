@@ -9,4 +9,4 @@ mem-trainer:
   iterations: 10
   evaluation: true
   training:
-    alpha: 0.7
+    alpha: 0.75
