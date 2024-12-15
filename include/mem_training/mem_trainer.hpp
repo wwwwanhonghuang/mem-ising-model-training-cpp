@@ -28,12 +28,19 @@ struct IsingMEMTrainer{
     std::unordered_map<int, long double> observation_configuration_possibility_map;
     int n_configurations;
     
+    long double clip_threshold = 0.1;
+    long double clip_gradient(long double grad) {
+        if(grad < -clip_threshold) return -clip_threshold;
+        if(grad > clip_threshold) return clip_threshold;
+        return grad;
+    }
+    
     public:
     IsingMEMTrainer(std::shared_ptr<IsingModel> ising_model, 
                     std::shared_ptr<IsingInferencer> inferencer, 
                     const std::vector<int>& train_configurations, 
                     const std::vector<int>& observation_configurations,
-                    double alpha, bool require_evaluation);
+                    double alpha, bool require_evaluation, long double clip_threshold);
 
     void prepare_training();
     void update_model_parameters();
@@ -43,5 +50,8 @@ struct IsingMEMTrainer{
     long double evaluation();
 
     void gradient_descending_step();
+    void scale_parameters(double max_norm_J, double max_norm_H);
 };
+
+
 #endif

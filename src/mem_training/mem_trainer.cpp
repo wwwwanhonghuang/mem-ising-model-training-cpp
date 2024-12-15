@@ -2,6 +2,40 @@
 #include "utils/ising_model_utils.hpp"
 #include <cmath>
 #include <omp.h>
+#include <cassert>
+#define PLUS_EPISLON_SMOOTHING(value) (value == 0 ? 1e-39 : value)
+
+
+#include <numeric>
+
+void IsingMEMTrainer::scale_parameters(double max_norm_J, double max_norm_H) {
+    long double J_min = INFINITY;
+    long double J_max = -INFINITY;
+    for (int i = 0; i < ising_model->n_sites; i++) {
+        for (int j = 0; j < ising_model->n_sites; j++) {
+            if(ising_model->J[i][j] < J_min) J_min = ising_model->J[i][j];
+            if(ising_model->J[i][j] > J_min) J_max = ising_model->J[i][j];
+
+        }
+    }
+    for (int i = 0; i < ising_model->n_sites; i++) {
+        for (int j = 0; j < ising_model->n_sites; j++) {
+            ising_model->J[i][j] /= (ising_model->J[i][j] - J_min) / (J_max- J_min);
+        }
+    }
+
+    long double H_min = INFINITY;
+    long double H_max = -INFINITY;
+    for (int i = 0; i < ising_model->n_sites; i++) {
+        if(ising_model->H[i] < H_min) H_min = ising_model->H[i];
+        if(ising_model->H[i] > H_min) H_max = ising_model->H[i];
+    }
+
+    for (int i = 0; i < ising_model->n_sites; i++) {
+        ising_model->H[i] /= (ising_model->H[i] - H_min) / (H_max - H_min);
+    }
+    
+}
 
 std::vector<long double> calculate_observation_essembly_average_si(const std::vector<int>& observation_configurations, 
         std::shared_ptr<IsingModel> ising_model){
@@ -23,7 +57,12 @@ std::vector<long double> calculate_observation_essembly_average_si(const std::ve
 
 std::vector<std::vector<long double>> calculate_observation_essembly_average_si_sj(const std::vector<int>& observation_configurations, 
         std::shared_ptr<IsingModel> ising_model){
-    std::vector<std::vector<long double>> essembly_average(ising_model->n_sites, std::vector<long double>(ising_model->n_sites, 0));
+    if (ising_model->n_sites <= 0) {
+        std::cerr << "Error: Invalid value of n_sites: " << ising_model->n_sites << std::endl;
+    }
+    std::vector<std::vector<long double>> 
+        essembly_average(ising_model->n_sites, std::vector<long double>(ising_model->n_sites, 0.0));
+
     for(int configuration : observation_configurations){
         std::vector<char> v = to_binary_representation(ising_model->n_sites, configuration);
         for(int i = 0; i < ising_model->n_sites; i++){
@@ -48,7 +87,6 @@ std::vector<long double> calculate_model_proposed_essembly_average_si(const std:
 
     #pragma omp parallel
     {
-        // Each thread gets a private copy for accumulation
         std::vector<long double> local_essembly_average(n_sites, 0.0);
 
         #pragma omp for
@@ -56,7 +94,7 @@ std::vector<long double> calculate_model_proposed_essembly_average_si(const std:
             int configuration = configurations[idx];
             std::vector<char> v = to_binary_representation(n_sites, configuration);
             long double possibility = ising_inferencer->calculate_configuration_possibility(ising_model, v);
-
+            assert(!std::isnan(possibility));
             for (int i = 0; i < n_sites; i++) {
                 if (v[i] != 0) {
                     local_essembly_average[i] += possibility;
@@ -91,6 +129,7 @@ std::vector<std::vector<long double>> calculate_model_proposed_essembly_average_
             int configuration = configurations[idx];
             std::vector<char> v = to_binary_representation(n_sites, configuration);
             long double possibility = ising_inferencer->calculate_configuration_possibility(ising_model, v);
+            assert(!std::isnan(possibility));
 
             for (int i = 0; i < n_sites; i++) {
                 for (int j = 0; j < n_sites; j++) {
@@ -116,12 +155,23 @@ std::vector<std::vector<long double>> calculate_model_proposed_essembly_average_
 
 void IsingMEMTrainer::update_model_parameters(){
     for (int i = 0; i < ising_model->n_sites; i++) {
-        ising_model->H[i] += buffer_beta_H[i];
+        long double delta = buffer_beta_H[i];
+        long double grad = clip_gradient(delta);
+        ising_model->H[i] += grad;
+        assert(!std::isnan(grad));
+
     }
 
     for (int i = 0; i < ising_model->n_sites; i++) {
         for (int j = 0; j < ising_model->n_sites; j++) {
-            ising_model->J[i][j] += buffer_beta_J[i][j];
+            long double delta = clip_gradient(buffer_beta_J[i][j]);
+            long double grad = clip_gradient(delta);
+            if(std::isnan(grad)){
+                std::cout << grad << " clip from [" << buffer_beta_J[i][j] << "]" <<  std::endl;
+            }
+            assert(!std::isnan(grad));
+
+            ising_model->J[i][j] += grad;
         }
     }
 };
@@ -153,8 +203,8 @@ long double IsingMEMTrainer::evaluation(){
             ising_model_inferencer->calculate_configuration_possibility(ising_model, to_binary_representation(ising_model->n_sites, configuration), 2);
         long double p1 = 
             ising_model_inferencer->calculate_configuration_possibility(ising_model, to_binary_representation(ising_model->n_sites, configuration), 1);
-        p2 = laplace_smoothing(p2, n_configurations);
-        p1 = laplace_smoothing(p1, n_configurations);
+        p2 = p2 + 1e-39; // laplace_smoothing(p2, n_configurations);
+        p1 = p1 + 1e-39; // laplace_smoothing(p1, n_configurations);
         S2 += -p2 * std::log(p2);
         S1 += -p1 * std::log(p1);
 
@@ -162,11 +212,20 @@ long double IsingMEMTrainer::evaluation(){
         if(observation_configuration_possibility_map.find(configuration) != observation_configuration_possibility_map.end()){
             p_observation = observation_configuration_possibility_map[configuration];
         }
-        p_observation = laplace_smoothing(p_observation, n_configurations);
+        p_observation = p_observation + 1e-39; // laplace_smoothing(p_observation, n_configurations);
         SN += -p_observation * std::log(p_observation);
     }
 
-    long double r_s = (S1 - S2) / (S1 - SN);
+    long double r_s = (S1 - S2) / (S1 - SN); 
+    // r_s measures how well the model captures the higher-order 
+    // dependencies (order-2) compared to lower-order dependencies (order-1) 
+    // relative to the empirical entropy:
+    // If r_s is close to 1: The model’s higher-order terms significantly improve its fit to the data.
+    /*
+        If r_s is close to 1: The model’s higher-order terms significantly improve its fit to the data.
+        If r_s is close to 0: Higher-order terms provide no improvement.
+        If r_s is negative: The higher-order model is performing worse than the lower-order model.
+    */
     
     #pragma omp parallel for reduction(+:D1, D2)
     for(int configuration : train_configurations){
@@ -174,12 +233,12 @@ long double IsingMEMTrainer::evaluation(){
         if(observation_configuration_possibility_map.find(configuration) != observation_configuration_possibility_map.end()){
             obs_possibility = observation_configuration_possibility_map[configuration];
         }
-        obs_possibility = laplace_smoothing(obs_possibility, n_configurations);
+        obs_possibility = obs_possibility + 1e-39; // laplace_smoothing(obs_possibility, n_configurations);
 
         long double model_possibility_order_1 = ising_model_inferencer->calculate_configuration_possibility(ising_model, to_binary_representation(ising_model->n_sites, configuration), 1);
         long double model_possibility_order_2 = ising_model_inferencer->calculate_configuration_possibility(ising_model, to_binary_representation(ising_model->n_sites, configuration), 2);
-        model_possibility_order_1 = laplace_smoothing(model_possibility_order_1, n_configurations);
-        model_possibility_order_2 = laplace_smoothing(model_possibility_order_2, n_configurations);
+        model_possibility_order_1 = model_possibility_order_1 + 1e-39; // laplace_smoothing(model_possibility_order_1, n_configurations);
+        model_possibility_order_2 = model_possibility_order_2 + 1e-39; // laplace_smoothing(model_possibility_order_2, n_configurations);
 
         D1 += obs_possibility * std::log(obs_possibility / model_possibility_order_1);
         D2 += obs_possibility * std::log(obs_possibility / model_possibility_order_2);
@@ -216,44 +275,43 @@ void IsingMEMTrainer::gradient_descending_step(){
     std::cout << "        - calculate obs_essembly_avgerage_si" << std::endl;
     std::vector<long double> obs_essembly_avgerage_si = 
         calculate_observation_essembly_average_si(observation_configurations, ising_model);
-    print_si(obs_essembly_avgerage_si);
+    // print_si(obs_essembly_avgerage_si);
 
     std::cout << "        - calculate obs_essembly_avgerage_si_sj" << std::endl;
     std::vector<std::vector<long double>> obs_essembly_avgerage_si_sj = 
         calculate_observation_essembly_average_si_sj(observation_configurations, ising_model);
-    print_sisj(obs_essembly_avgerage_si_sj);
+    // print_sisj(obs_essembly_avgerage_si_sj);
 
     std::cout << "        - calculate model_essembly_avgerage_si" << std::endl;
     std::vector<long double> model_essembly_avgerage_si = 
         calculate_model_proposed_essembly_average_si(train_configurations, 
             ising_model, ising_model_inferencer);
-    print_si(model_essembly_avgerage_si);
+    // print_si(model_essembly_avgerage_si);
 
     std::cout << "        - calculate model_essembly_avgerage_si_sj" << std::endl;
     std::vector<std::vector<long double>> model_essembly_avgerage_si_sj = 
         calculate_model_proposed_essembly_average_si_sj(train_configurations, 
             ising_model, ising_model_inferencer);
-    print_sisj(model_essembly_avgerage_si_sj);
+    // print_sisj(model_essembly_avgerage_si_sj);
 
     const long double lambda = 1e-19L;
     int N = observation_configurations.size();
 
     // calculate delta H, and update H
     for(int i = 0; i < ising_model->n_sites; i++){
-        long double smoothed_observation_value = obs_essembly_avgerage_si[i] == 0 ? 1e-39 : 0; // laplace_smoothing(obs_essembly_avgerage_si[i], N, 1 << ising_model->n_sites, 1e-39);
-        long double smoothed_model_value = model_essembly_avgerage_si[i] == 0 ? 1e-39 : 0;  // laplace_smoothing(model_essembly_avgerage_si[i], 1 << ising_model->n_sites, 1 << ising_model->n_sites, 1e-39);
-        
-        long double delta = alpha * std::log(smoothed_observation_value / smoothed_model_value); 
+        long double smoothed_observation_value = PLUS_EPISLON_SMOOTHING(obs_essembly_avgerage_si[i]); // obs_essembly_avgerage_si[i] == 0 ? 1e-39 : obs_essembly_avgerage_si[i]; // laplace_smoothing(obs_essembly_avgerage_si[i], N, 1 << ising_model->n_sites, 1e-39);
+        long double model_value = model_essembly_avgerage_si[i]; // == 0 ? 1e-39 : model_essembly_avgerage_si[i];  // laplace_smoothing(model_essembly_avgerage_si[i], 1 << ising_model->n_sites, 1 << ising_model->n_sites, 1e-39);
+        long double delta = alpha * std::log(smoothed_observation_value / model_value); 
             buffer_beta_H[i] = delta;
     }
 
     // calculate delta J, and update J
     for(int i = 0; i < ising_model->n_sites; i++){
         for(int j = 0; j < ising_model->n_sites; j++){
-		long double smoothed_observation_value = obs_essembly_avgerage_si_sj[i][j] == 0 ? 1e-39 : 0; // laplace_smoothing(obs_essembly_avgerage_si_sj[i][j], N, 1 << ising_model->n_sites, 1e-39);
-        long double smoothed_model_value = model_essembly_avgerage_si_sj[i][j] == 0 ? 1e-39 : 0; // laplace_smoothing(model_essembly_avgerage_si_sj[i][j], 1 << ising_model->n_sites, 1 << ising_model->n_sites, 1e-39);
+		long double smoothed_observation_value = PLUS_EPISLON_SMOOTHING(obs_essembly_avgerage_si_sj[i][j]); //  == 0 ? 1e-39 : 0; // laplace_smoothing(obs_essembly_avgerage_si_sj[i][j], N, 1 << ising_model->n_sites, 1e-39);
+        long double model_value = model_essembly_avgerage_si_sj[i][j]; // == 0 ? 1e-39 : 0; // laplace_smoothing(model_essembly_avgerage_si_sj[i][j], 1 << ising_model->n_sites, 1 << ising_model->n_sites, 1e-39);
         long double delta = alpha * 
-                std::log(smoothed_observation_value / smoothed_model_value); 
+                std::log(smoothed_observation_value / model_value); 
             buffer_beta_J[i][j] = delta;
         }
     }
@@ -263,13 +321,13 @@ IsingMEMTrainer::IsingMEMTrainer(std::shared_ptr<IsingModel> ising_model,
                     std::shared_ptr<IsingInferencer> inferencer, 
                     const std::vector<int>& train_configurations, 
                     const std::vector<int>& observation_configurations,
-                    double alpha, bool require_evaluation)
+                    double alpha, bool require_evaluation, long double clip_threshold)
         : ising_model(ising_model), 
           ising_model_inferencer(inferencer), 
           train_configurations(train_configurations), 
           observation_configurations(observation_configurations),
           alpha(alpha), 
-          require_evaluation(require_evaluation) {
+          require_evaluation(require_evaluation), clip_threshold(clip_threshold) {
         
     buffer_beta_H.resize(ising_model->n_sites, 0.0);
     buffer_beta_J.resize(ising_model->n_sites, 
