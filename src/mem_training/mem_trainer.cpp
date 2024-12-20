@@ -79,6 +79,39 @@ std::vector<std::vector<long double>> calculate_observation_essembly_average_si_
     return essembly_average;
 };
 
+
+
+std::vector<std::vector<long double>> calculate_dynamical_observation_essembly_average_si_sj(const std::vector<int>& observation_configurations, 
+        std::shared_ptr<IsingModel> ising_model){
+    int total_time_step = observation_configurations.size();
+
+    if (ising_model->n_sites <= 0) {
+        std::cerr << "Error: Invalid value of n_sites: " << ising_model->n_sites << std::endl;
+    }
+
+    std::vector<std::vector<long double>> 
+        essembly_average(ising_model->n_sites, std::vector<long double>(ising_model->n_sites, 0.0));
+
+    for(int t = 0; t < total_time_step - 1; t++){
+        std::vector<char> configuration_t = to_binary_representation(ising_model->n_sites, observation_configurations[t]);
+        std::vector<char> configuration_t_plus_1 = to_binary_representation(ising_model->n_sites, observation_configurations[t + 1]);
+        for(int i = 0; i < ising_model->n_sites; i++){
+            for(int j = 0; j < ising_model->n_sites; j++){
+                if(configuration_t[i] == 1 && configuration_t_plus_1[j] == 1) 
+                    essembly_average[i][j] += 1;
+            }
+        }
+
+    }
+
+    for(int i = 0; i < ising_model->n_sites; i++){
+        for(int j = 0; j < ising_model->n_sites; j++){
+            essembly_average[i][j] /= observation_configurations.size();
+        }
+    }
+    return essembly_average;
+};
+
 std::vector<long double> calculate_model_proposed_essembly_average_si(const std::vector<int>& configurations, std::shared_ptr<IsingModel> ising_model, std::shared_ptr<IsingInferencer> ising_inferencer){
     int n_sites = ising_model->n_sites;
     std::vector<long double> essembly_average(n_sites, 0.0);

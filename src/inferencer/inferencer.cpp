@@ -90,7 +90,6 @@ long double IsingInferencer::calculate_configuration_possibility(std::shared_ptr
     assert(false);
 }
 
-
 long double IsingInferencer::get_Z(int order){
     if (order != 1 && order != 2) {
         std::cout << "Error: Order should equal to 1 or 2." << std::endl;

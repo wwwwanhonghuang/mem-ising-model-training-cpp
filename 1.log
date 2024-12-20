@@ -1,0 +1,47 @@
+Read spin configurations...
+ - Load samples for training from file data/configuration_n12.bin[2024-12-15 21:20:11]
+ - Loaded samples for training from file  configuration count = 4096[2024-12-15 21:20:11]
+ - Load observation samples from file data/encoded_configurations.bin[2024-12-15 21:20:11]
+ - Read spin configurations finished. configuration count = 600000[2024-12-15 21:20:11]
+Enter training loop...[2024-12-15 21:20:11]
+Randomly intitialize ising model finished.[2024-12-15 21:20:11]
+prepare trainning..
+  - prepare partition functions..
+  - partition functions Z1 = nan
+  - partition functions Z2 = nan
+Iteration 1/10[2024-12-15 21:20:11]:
+  - Calculate gradients...[2024-12-15 21:20:11]
+      - begin gradient_descending_step()
+        - calculate obs_essembly_avgerage_si
+0.092565 0.092565 0.092565 0.092565 0.092565 0.092565 0.092565 0.0925183 0.09255 0.092565 0.092565 0.092565 
+        - calculate obs_essembly_avgerage_si_sj
+0.092565 0.05808 0.023595 0 0 0 0 0 0 0 0 0 
+0.05808 0.092565 0.05808 0.023595 0 0 0 0 0 0 0 0 
+0.023595 0.05808 0.092565 0.05808 0.023595 0 0 0 0 0 0 0 
+0 0.023595 0.05808 0.092565 0.05808 0.023595 0 0 0 0 0 0 
+0 0 0.023595 0.05808 0.092565 0.05808 0.023595 0 0 0 0 0 
+0 0 0 0.023595 0.05808 0.092565 0.05808 0 0 0 0 0 
+0 0 0 0 0.023595 0.05808 0.092565 0 0 0 0 0 
+0 0 0 0 0 0 0 0.0925183 0.058065 0.023595 0 0 
+0 0 0 0 0 0 0 0.058065 0.09255 0.05808 0.023595 0 
+0 0 0 0 0 0 0 0.023595 0.05808 0.092565 0.05808 0.023595 
+0 0 0 0 0 0 0 0 0.023595 0.05808 0.092565 0.05808 
+0 0 0 0 0 0 0 0 0 0.023595 0.05808 0.092565 
+
+        - calculate model_essembly_avgerage_si
+nan nan nan nan nan nan nan nan nan nan nan nan 
+        - calculate model_essembly_avgerage_si_sj
+nan nan nan nan nan nan nan nan nan nan nan nan 
+nan nan nan nan nan nan nan nan nan nan nan nan 
+nan nan nan nan nan nan nan nan nan nan nan nan 
+nan nan nan nan nan nan nan nan nan nan nan nan 
+nan nan nan nan nan nan nan nan nan nan nan nan 
+nan nan nan nan nan nan nan nan nan nan nan nan 
+nan nan nan nan nan nan nan nan nan nan nan nan 
+nan nan nan nan nan nan nan nan nan nan nan nan 
+nan nan nan nan nan nan nan nan nan nan nan nan 
+nan nan nan nan nan nan nan nan nan nan nan nan 
+nan nan nan nan nan nan nan nan nan nan nan nan 
+nan nan nan nan nan nan nan nan nan nan nan nan 
+
+  - Update model parameters...[2024-12-15 21:20:12]
