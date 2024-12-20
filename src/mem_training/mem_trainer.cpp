@@ -60,6 +60,7 @@ std::vector<std::vector<long double>> calculate_observation_essembly_average_si_
     if (ising_model->n_sites <= 0) {
         std::cerr << "Error: Invalid value of n_sites: " << ising_model->n_sites << std::endl;
     }
+
     std::vector<std::vector<long double>> 
         essembly_average(ising_model->n_sites, std::vector<long double>(ising_model->n_sites, 0.0));
 
@@ -71,14 +72,37 @@ std::vector<std::vector<long double>> calculate_observation_essembly_average_si_
             }
         }
     }
+
     for(int i = 0; i < ising_model->n_sites; i++){
         for(int j = 0; j < ising_model->n_sites; j++){
             essembly_average[i][j] /= observation_configurations.size();
         }
     }
+
     return essembly_average;
 };
 
+
+std::vector<long double> calculate_dynamical_observation_essembly_average_si(const std::vector<int>& observation_configurations, 
+        std::shared_ptr<IsingModel> ising_model){
+
+    std::vector<long double> essembly_average(ising_model->n_sites, 0);
+    
+    int n_time_samples = observation_configurations.size();
+    for(int t = 0; t < n_time_samples - 1; t++){
+        int configuration = observation_configurations[t];
+        std::vector<char> v = to_binary_representation(ising_model->n_sites, configuration);
+        for(int i = 0; i < v.size(); i++){
+            essembly_average[i] += v[i];
+        }
+    }
+
+    for(int i = 0; i < ising_model->n_sites; i++){
+        essembly_average[i] /= (observation_configurations.size() - 1);
+    }
+
+    return essembly_average;
+}
 
 
 std::vector<std::vector<long double>> calculate_dynamical_observation_essembly_average_si_sj(const std::vector<int>& observation_configurations, 
@@ -106,7 +130,7 @@ std::vector<std::vector<long double>> calculate_dynamical_observation_essembly_a
 
     for(int i = 0; i < ising_model->n_sites; i++){
         for(int j = 0; j < ising_model->n_sites; j++){
-            essembly_average[i][j] /= observation_configurations.size();
+            essembly_average[i][j] /= (observation_configurations.size() - 1);
         }
     }
     return essembly_average;
@@ -307,11 +331,15 @@ void IsingMEMTrainer::gradient_descending_step(){
 
     std::cout << "        - calculate obs_essembly_avgerage_si" << std::endl;
     std::vector<long double> obs_essembly_avgerage_si = 
+        this->is_dynamical ? 
+        calculate_dynamical_observation_essembly_average_si(observation_configurations, ising_model):
         calculate_observation_essembly_average_si(observation_configurations, ising_model);
     // print_si(obs_essembly_avgerage_si);
 
     std::cout << "        - calculate obs_essembly_avgerage_si_sj" << std::endl;
     std::vector<std::vector<long double>> obs_essembly_avgerage_si_sj = 
+        this->is_dynamical ?
+        calculate_dynamical_observation_essembly_average_si_sj(observation_configurations, ising_model) :
         calculate_observation_essembly_average_si_sj(observation_configurations, ising_model);
     // print_sisj(obs_essembly_avgerage_si_sj);
 
@@ -367,7 +395,10 @@ IsingMEMTrainer::IsingMEMTrainer(std::shared_ptr<IsingModel> ising_model,
         std::vector<long double>(ising_model->n_sites, 0.0));
     
     // Build observation frequency map.
-    for(int configuration : observation_configurations){
+    int n_time_samples = observation_configurations.size();
+
+    for(int t = 0; t < n_time_samples - 1; t++){
+        int configuration = observation_configurations[t];
         observation_configuration_possibility_map[configuration]++;
     }
 
