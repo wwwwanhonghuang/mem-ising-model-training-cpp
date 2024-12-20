@@ -8,18 +8,21 @@
 #include "utils/ising_model_utils.hpp"
 #include "inferencer/inferencer.hpp"
 
-
 std::vector<long double> calculate_observation_essembly_average_si(const std::vector<int>& observation_configurations, std::shared_ptr<IsingModel> ising_model);
+
+std::vector<long double> calculate_dynamical_observation_essembly_average_si(const std::vector<int>& observation_configurations, 
+        std::shared_ptr<IsingModel> ising_model);
+
+
 std::vector<std::vector<long double>> calculate_observation_essembly_average_si_sj(const std::vector<int>& observation_configurations, 
         std::shared_ptr<IsingModel> ising_model);
+
+
 std::vector<long double> calculate_model_proposed_essembly_average_si(const std::vector<int>& configurations, std::shared_ptr<IsingModel> ising_model, std::shared_ptr<IsingInferencer> ising_inferencer);
 std::vector<std::vector<long double>> calculate_model_proposed_essembly_average_si_sj(const std::vector<int>& configurations, std::shared_ptr<IsingModel> ising_model, std::shared_ptr<IsingInferencer> ising_inferencer);
 
-
-
 std::vector<std::vector<long double>> calculate_dynamical_observation_essembly_average_si_sj(const std::vector<int>& observation_configurations, 
         std::shared_ptr<IsingModel> ising_model);
-
 
 struct IsingMEMTrainer{
     private:
@@ -49,6 +52,7 @@ struct IsingMEMTrainer{
                     double alpha, bool require_evaluation, long double clip_threshold);
 
     void prepare_training();
+
     void update_model_parameters();
 
     void update_model_partition_functions();
@@ -56,8 +60,8 @@ struct IsingMEMTrainer{
     long double evaluation();
 
     void gradient_descending_step();
+
     void scale_parameters(double max_norm_J, double max_norm_H);
 };
-
 
 #endif
