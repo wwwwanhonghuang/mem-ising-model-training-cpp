@@ -44,7 +44,13 @@ struct IsingMEMTrainer{
         return grad;
     }
     
+    bool is_dynamical = false;
+    
     public:
+    bool set_dynamical_version(bool value){
+        this->is_dynamical = value;
+    }
+    
     IsingMEMTrainer(std::shared_ptr<IsingModel> ising_model, 
                     std::shared_ptr<IsingInferencer> inferencer, 
                     const std::vector<int>& train_configurations, 
