@@ -15,6 +15,12 @@ std::vector<std::vector<long double>> calculate_observation_essembly_average_si_
 std::vector<long double> calculate_model_proposed_essembly_average_si(const std::vector<int>& configurations, std::shared_ptr<IsingModel> ising_model, std::shared_ptr<IsingInferencer> ising_inferencer);
 std::vector<std::vector<long double>> calculate_model_proposed_essembly_average_si_sj(const std::vector<int>& configurations, std::shared_ptr<IsingModel> ising_model, std::shared_ptr<IsingInferencer> ising_inferencer);
 
+
+
+std::vector<std::vector<long double>> calculate_dynamical_observation_essembly_average_si_sj(const std::vector<int>& observation_configurations, 
+        std::shared_ptr<IsingModel> ising_model);
+
+
 struct IsingMEMTrainer{
     private:
     std::shared_ptr<IsingModel> ising_model;
