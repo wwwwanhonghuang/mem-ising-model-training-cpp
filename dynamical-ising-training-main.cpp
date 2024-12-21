@@ -117,6 +117,7 @@ int main(){
         observation_configurations, alpha, require_evaluation, gradient_clip_threshold);
 
     
+    
     std::cout << "Enter training loop..." << "[" << current_time() << "]"  << std::endl;
 
 
