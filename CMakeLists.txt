@@ -36,6 +36,10 @@ target_link_libraries(configuration_generator ${LINK_LIBS})
 add_executable(mem_ising_training_main ${SOURCES} training-main.cpp)
 target_link_libraries(mem_ising_training_main PRIVATE ${LINK_LIBS})
 
+add_executable(dynamical_mem_ising_training_main ${SOURCES} dynamical-ising-training-main.cpp)
+target_link_libraries(dynamical_mem_ising_training_main PRIVATE ${LINK_LIBS})
+
+
 find_package(OpenMP REQUIRED)
 if(OpenMP_CXX_FOUND)
     target_link_libraries(mem_ising_training_main PRIVATE OpenMP::OpenMP_CXX)
@@ -47,5 +51,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -latomic -g -O3")
 add_custom_target(clean-all
     COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/configuration_generator
     COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mem_ising_training_main
+    COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/dynamical-ising-training-main
     COMMENT "Cleaning generated binaries"
 )

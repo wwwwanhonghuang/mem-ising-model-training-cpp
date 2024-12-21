@@ -47,7 +47,7 @@ struct IsingMEMTrainer{
     bool is_dynamical = false;
     
     public:
-    bool set_dynamical_version(bool value){
+    void set_dynamical_version(bool value){
         this->is_dynamical = value;
     }
     
