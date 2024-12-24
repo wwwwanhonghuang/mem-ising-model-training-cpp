@@ -27,6 +27,34 @@ void IsingInferencer::update_partition_function(std::shared_ptr<IsingModel> isin
     // assert(Z2 > 0);
 }
 
+long double time_dependent_ising_energy(std::shared_ptr<IsingModel> ising_model, const std::vector<char>& configuration_t, const std::vector<char>& configuration_next_t, int order = 2){
+    long double energy = 0.0;
+    
+    if (order != 1 && order != 2) {
+        std::cout << "Error: Order should equal to 1 or 2." << std::endl;
+        assert(false);
+    }
+
+    if (order == 2) {
+        for (int i = 0; i < ising_model->n_sites; i++) {
+            for (int j = 0; j < ising_model->n_sites; j++) {
+                if (i != j) {
+                    energy += -ising_model->J[i][j] * configuration_t[i] * configuration_next_t[j];
+                }
+            }
+        }
+    }
+    
+    for (int i = 0; i < ising_model->n_sites; i++) {
+        energy += -ising_model->H[i] * static_cast<int>(configuration_t[i]);
+        // assert(!std::isnan(energy));
+    }
+    // assert(!std::isnan(energy));
+
+    return energy;
+}
+
+
 long double IsingInferencer::energy(std::shared_ptr<IsingModel> ising_model, const std::vector<char>& configuration, int order) {
     long double energy = 0.0;
     // std::cout << "Configuration: ";

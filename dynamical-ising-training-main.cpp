@@ -117,7 +117,7 @@ int main(){
         observation_configurations, alpha, require_evaluation, gradient_clip_threshold);
 
     
-    
+    ising_model_mem_trainer->set_dynamical_version(true);
     std::cout << "Enter training loop..." << "[" << current_time() << "]"  << std::endl;
 
 
